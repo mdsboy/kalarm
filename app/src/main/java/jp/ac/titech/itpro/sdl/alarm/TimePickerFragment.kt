@@ -52,27 +52,16 @@ class TimePickerFragment : DialogFragment(), TimePickerDialog.OnTimeSetListener 
         }
 
         alarmMgr?.set(
+                /*
+                 * To easy to debug
+                 */
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                5*1000,/*
+                5*1000,
+                /*
                 AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,*/
+                calendar.timeInMillis,
+                */
                 alarmIntent
         )
-
-        /*
-            val requestId = 100
-            val intent = Intent()
-
-            val alarmManager = this.context?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            val pendingIntent =
-                    PendingIntent.getService(context, requestId, intent,
-                            PendingIntent.FLAG_NO_CREATE)
-            if (pendingIntent != null && alarmManager != null) {
-                alarmManager.cancel(pendingIntent)
-                Log.d("debug", "cancel")
-            } else {
-                Log.d("debug", String.format("%d:%d", hourOfDay, minute))
-            }
-    */
     }
 }
