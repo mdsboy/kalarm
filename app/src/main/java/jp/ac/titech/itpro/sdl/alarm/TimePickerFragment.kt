@@ -56,7 +56,7 @@ class TimePickerFragment : DialogFragment(), TimePickerDialog.OnTimeSetListener 
                  * To easy to debug
                  */
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                5*1000,
+                1*1000,
                 /*
                 AlarmManager.RTC_WAKEUP,
                 calendar.timeInMillis,

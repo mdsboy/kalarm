@@ -3,6 +3,7 @@
     package="jp.ac.titech.itpro.sdl.alarm">
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:allowBackup="true"
