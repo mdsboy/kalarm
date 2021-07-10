@@ -1,34 +1,14 @@
 package jp.ac.titech.itpro.sdl.alarm
 
-import android.app.AlarmManager
 import android.app.Dialog
-import android.app.PendingIntent
 import android.app.TimePickerDialog
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.text.format.DateFormat
-import android.util.Log
-import android.widget.TimePicker
 import androidx.fragment.app.DialogFragment
 import java.util.*
 
 
-class TimePickerFragment : DialogFragment(), TimePickerDialog.OnTimeSetListener {
-
-    private var alarmMgr: AlarmManager? = null
-    private lateinit var alarmIntent: PendingIntent
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        alarmMgr = context?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-        alarmIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
-            PendingIntent.getBroadcast(context, 0, intent, 0)
-        }
-    }
-
+class TimePickerFragment : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         // Use the current time as the default values for the picker
         val c = Calendar.getInstance()
@@ -36,32 +16,12 @@ class TimePickerFragment : DialogFragment(), TimePickerDialog.OnTimeSetListener 
         val minute = c.get(Calendar.MINUTE)
 
         // Create a new instance of TimePickerDialog and return it
-        return TimePickerDialog(activity, this, hour, minute, DateFormat.is24HourFormat(activity))
-    }
-
-    override fun onTimeSet(view: TimePicker, hourOfDay: Int, minute: Int) {
-        // Do something with the time chosen by the user
-
-        Log.d("debug", String.format("%d:%d", hourOfDay, minute))
-
-        // Set the alarm to start at 8:30 a.m.
-        val calendar: Calendar = Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
-            set(Calendar.HOUR_OF_DAY, hourOfDay)
-            set(Calendar.MINUTE, minute)
-        }
-
-        alarmMgr?.set(
-                /*
-                 * To easy to debug
-                 */
-                AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                1*1000,
-                /*
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                */
-                alarmIntent
+        return TimePickerDialog(
+            activity,
+            activity as MainActivity,
+            hour,
+            minute,
+            DateFormat.is24HourFormat(activity)
         )
     }
 }

@@ -16,13 +16,22 @@ class AlarmReceiver : BroadcastReceiver() {
     private val samplingRate = 44100
     private val frameRate = 10
     private val section = samplingRate / frameRate * 10
-    private val bufSize = AudioRecord.getMinBufferSize(samplingRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+    private val bufSize = AudioRecord.getMinBufferSize(
+        samplingRate,
+        AudioFormat.CHANNEL_IN_MONO,
+        AudioFormat.ENCODING_PCM_16BIT
+    )
 
     val audioDataArray = ShortArray(section)
 
     private var mediaPlayer: MediaPlayer? = null
     private var audioRecord: AudioRecord = AudioRecord(
-            MediaRecorder.AudioSource.MIC, samplingRate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufSize)
+        MediaRecorder.AudioSource.MIC,
+        samplingRate,
+        AudioFormat.CHANNEL_IN_MONO,
+        AudioFormat.ENCODING_PCM_16BIT,
+        bufSize
+    )
 
     override fun onReceive(context: Context?, intent: Intent?) {
 
@@ -38,7 +47,8 @@ class AlarmReceiver : BroadcastReceiver() {
 
         audioRecord.notificationMarkerPosition = 40000
 
-        audioRecord.setRecordPositionUpdateListener(object : AudioRecord.OnRecordPositionUpdateListener {
+        audioRecord.setRecordPositionUpdateListener(object :
+            AudioRecord.OnRecordPositionUpdateListener {
             override fun onPeriodicNotification(recorder: AudioRecord) {
                 recorder.read(audioDataArray, 0, section) // 音声データ読込
                 Log.v("AudioRecord", "onPeriodicNotification size=${audioDataArray.size}")
