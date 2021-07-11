@@ -2,29 +2,33 @@ package jp.ac.titech.itpro.sdl.alarm
 
 import android.app.AlarmManager
 import android.app.PendingIntent
-import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.TextView
+import android.widget.Button
 import android.widget.TimePicker
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import java.util.*
 
-class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
+class MainActivity : AppCompatActivity() {
 
     private var alarmMgr: AlarmManager? = null
     private var alarmIntent: PendingIntent? = null
 
-    private var setTimeView: TextView? = null
+    private var timePicker: TimePicker? = null
+    private var button: Button? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setTimeView = findViewById(R.id.set_time)
+        timePicker = findViewById(R.id.timePicker)
+
+        button = findViewById(R.id.button)
 
         alarmMgr = this.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
@@ -33,33 +37,32 @@ class MainActivity : AppCompatActivity(), TimePickerDialog.OnTimeSetListener {
         }
     }
 
-    fun showTimePickerDialog(v: View) {
-        TimePickerFragment().show(supportFragmentManager, "timePicker")
-    }
+    @RequiresApi(Build.VERSION_CODES.M)
+    fun setAlarm(v: View) {
+        timePicker?.let { picker ->
 
-    override fun onTimeSet(view: TimePicker, hourOfDay: Int, minute: Int) {
+            val calendar = Calendar.getInstance().apply {
+                timeInMillis = System.currentTimeMillis()
+                set(Calendar.HOUR_OF_DAY, picker.hour)
+                set(Calendar.MINUTE, picker.minute)
+            }
 
-        Log.d("debug", String.format("%d:%d", hourOfDay, minute))
+            Log.v("debug", String.format("set alarm %d:%d", picker.hour, picker.minute))
 
-        val calendar: Calendar = Calendar.getInstance().apply {
-            timeInMillis = System.currentTimeMillis()
-            set(Calendar.HOUR_OF_DAY, hourOfDay)
-            set(Calendar.MINUTE, minute)
+            alarmMgr?.set(
+                /*
+                 * for debug
+                 */
+                /*
+                AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                1 * 1000,
+                */
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                alarmIntent
+            )
+
+            button?.isEnabled = false
         }
-
-        alarmMgr?.set(
-            /*
-             * for debug
-             */
-            AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            1 * 1000,
-            /*
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
-            */
-            alarmIntent
-        )
-
-        setTimeView?.text = String.format("%d:%d", hourOfDay, minute)
     }
 }

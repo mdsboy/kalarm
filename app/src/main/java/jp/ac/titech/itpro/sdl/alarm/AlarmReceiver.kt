@@ -79,6 +79,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 if (amplitude > 1000) {
                     mediaPlayer?.stop()
                     vibrator?.cancel()
+                    audioRecord.stop()
                 }
             }
 

@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">kalarm</string>
-    <string name="pick_time">choice time</string>
+    <string name="pick_time">set alarm</string>
 </resources>
