@@ -2,6 +2,7 @@ package jp.ac.titech.itpro.sdl.alarm
 
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_CANCEL_CURRENT
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -18,9 +19,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var timePicker: TimePicker
     private lateinit var button: Button
+    private lateinit var darkView: View
 
     private lateinit var alarmMgr: AlarmManager
-    private lateinit var alarmIntent: PendingIntent
+    private var alarmIntent: PendingIntent? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,11 +32,11 @@ class MainActivity : AppCompatActivity() {
 
         button = findViewById(R.id.button)
 
-        alarmMgr = this.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        darkView = findViewById(R.id.view)
+        darkView.visibility = View.GONE
+        darkView.setOnTouchListener { _, _ -> true }
 
-        alarmIntent = Intent(this, AlarmReceiver::class.java).let { intent ->
-            PendingIntent.getBroadcast(this, 0, intent, 0)
-        }
+        alarmMgr = this.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -42,10 +44,15 @@ class MainActivity : AppCompatActivity() {
         if (button.text == "set alarm") {
             setAlarm()
             button.text = "cancel alarm"
-        } else {
+            darkView.visibility = View.VISIBLE
+        }
+        /*
+        else {
             alarmMgr.cancel(alarmIntent)
             button.text = "set alarm"
+            darkView.visibility = View.GONE
         }
+        */
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -58,17 +65,33 @@ class MainActivity : AppCompatActivity() {
 
         Log.v("debug", String.format("set alarm %d:%d", timePicker.hour, timePicker.minute))
 
-        alarmMgr.set(
+        val intent = Intent(this, AlarmReceiver::class.java)
+        intent.putExtra("HOUR", timePicker.hour)
+        intent.putExtra("MINUTE", timePicker.minute)
+
+        alarmIntent = PendingIntent.getBroadcast(this, 0, intent, 0)
+
+        alarmMgr.setExact(
             /*
              * for debug
              */
-            /*
+
             AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            1 * 1000,
-            */
+            0,
+            /*
             AlarmManager.RTC_WAKEUP,
             calendar.timeInMillis,
+            */
             alarmIntent
         )
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        Log.v("po", "onResume")
+
+        button.text = "set alarm"
+        darkView.visibility = View.GONE
     }
 }
