@@ -16,11 +16,11 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
-    private var alarmMgr: AlarmManager? = null
-    private var alarmIntent: PendingIntent? = null
+    private lateinit var timePicker: TimePicker
+    private lateinit var button: Button
 
-    private var timePicker: TimePicker? = null
-    private var button: Button? = null
+    private lateinit var alarmMgr: AlarmManager
+    private lateinit var alarmIntent: PendingIntent
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,31 +38,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    fun setAlarm(v: View) {
-        timePicker?.let { picker ->
-
-            val calendar = Calendar.getInstance().apply {
-                timeInMillis = System.currentTimeMillis()
-                set(Calendar.HOUR_OF_DAY, picker.hour)
-                set(Calendar.MINUTE, picker.minute)
-            }
-
-            Log.v("debug", String.format("set alarm %d:%d", picker.hour, picker.minute))
-
-            alarmMgr?.set(
-                /*
-                 * for debug
-                 */
-                /*
-                AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                1 * 1000,
-                */
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                alarmIntent
-            )
-
-            button?.isEnabled = false
+    fun clickButton(v: View) {
+        if (button.text == "set alarm") {
+            setAlarm()
+            button.text = "cancel alarm"
+        } else {
+            alarmMgr.cancel(alarmIntent)
+            button.text = "set alarm"
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun setAlarm() {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
+            set(Calendar.HOUR_OF_DAY, timePicker.hour)
+            set(Calendar.MINUTE, timePicker.minute)
+        }
+
+        Log.v("debug", String.format("set alarm %d:%d", timePicker.hour, timePicker.minute))
+
+        alarmMgr.set(
+            /*
+             * for debug
+             */
+            /*
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            1 * 1000,
+            */
+            AlarmManager.RTC_WAKEUP,
+            calendar.timeInMillis,
+            alarmIntent
+        )
     }
 }
