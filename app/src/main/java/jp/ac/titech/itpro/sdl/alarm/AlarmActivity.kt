@@ -31,17 +31,19 @@ class AlarmActivity : AppCompatActivity() {
 
         val hour = intent.getIntExtra("HOUR", 0)
         val minute = intent.getIntExtra("MINUTE", 0)
-        timeText.text = String.format("%2d:%2d", hour, minute)
+        timeText.text = String.format("%02d:%02d", hour, minute)
 
         mediaPlayer = MediaPlayer.create(applicationContext, R.raw.sound_file_1)
         vibrator = applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
+        mediaPlayer.isLooping = true
+
         mediaPlayer.start()
 
         val vibrationEffect = VibrationEffect.createWaveform(
-            longArrayOf(300, 300),
-            intArrayOf(0, VibrationEffect.DEFAULT_AMPLITUDE),
-            0
+                longArrayOf(300, 300),
+                intArrayOf(0, VibrationEffect.DEFAULT_AMPLITUDE),
+                0
         )
         vibrator.vibrate(vibrationEffect)
 
@@ -54,19 +56,19 @@ class AlarmActivity : AppCompatActivity() {
         val frameRate = 10
         val section = samplingRate / frameRate * 30
         val bufSize = AudioRecord.getMinBufferSize(
-            samplingRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
+                samplingRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
         )
 
         val audioDataArray = ShortArray(section)
 
         val audioRecord = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
-            samplingRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            bufSize
+                MediaRecorder.AudioSource.MIC,
+                samplingRate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                bufSize
         )
 
         audioRecord.positionNotificationPeriod = section
@@ -74,7 +76,7 @@ class AlarmActivity : AppCompatActivity() {
         audioRecord.notificationMarkerPosition = 40000
 
         audioRecord.setRecordPositionUpdateListener(object :
-            AudioRecord.OnRecordPositionUpdateListener {
+                AudioRecord.OnRecordPositionUpdateListener {
             override fun onPeriodicNotification(recorder: AudioRecord) {
                 recorder.read(audioDataArray, 0, section)
                 Log.v("AudioRecord", "onPeriodicNotification size=${audioDataArray.size}")

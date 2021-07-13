@@ -24,6 +24,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var alarmMgr: AlarmManager
     private var alarmIntent: PendingIntent? = null
 
+    private object Keys {
+        const val HOUR = "HOUR"
+        const val MINUTE = "MINUTE"
+        const val IS_ALARM_SET = "IS_ALARM_SET"
+    }
+
+    private val SET_ALARM = "set alarm"
+    private val CANCEL_ALARM = "cancel alarm"
+
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -37,22 +47,40 @@ class MainActivity : AppCompatActivity() {
         darkView.setOnTouchListener { _, _ -> true }
 
         alarmMgr = this.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+        savedInstanceState?.let { savedInstanceState ->
+            timePicker.hour = savedInstanceState.getInt(Keys.HOUR, 0)
+            timePicker.minute = savedInstanceState.getInt(Keys.MINUTE, 0)
+
+            if (savedInstanceState.getBoolean(Keys.IS_ALARM_SET)) {
+                button.text = CANCEL_ALARM
+                darkView.visibility = View.VISIBLE
+            } else {
+                button.text = SET_ALARM
+                darkView.visibility = View.GONE
+            }
+
+            setAlarm()
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
     fun clickButton(v: View) {
-        if (button.text == "set alarm") {
-            setAlarm()
-            button.text = "cancel alarm"
-            darkView.visibility = View.VISIBLE
+        when (button.text) {
+            SET_ALARM -> {
+                setAlarm()
+                button.text = CANCEL_ALARM
+                darkView.visibility = View.VISIBLE
+            }
+            CANCEL_ALARM -> {
+                alarmMgr.cancel(alarmIntent)
+                button.text = SET_ALARM
+                darkView.visibility = View.GONE
+            }
+            else -> {
+                Log.d("debug", "unexpected text")
+            }
         }
-        /*
-        else {
-            alarmMgr.cancel(alarmIntent)
-            button.text = "set alarm"
-            darkView.visibility = View.GONE
-        }
-        */
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -69,29 +97,45 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("HOUR", timePicker.hour)
         intent.putExtra("MINUTE", timePicker.minute)
 
-        alarmIntent = PendingIntent.getBroadcast(this, 0, intent, 0)
+        alarmIntent = PendingIntent.getBroadcast(this, 0, intent, FLAG_CANCEL_CURRENT)
 
-        alarmMgr.setExact(
-            /*
-             * for debug
-             */
-
+        alarmMgr.setExactAndAllowWhileIdle(
+                /*
+                 * for debug
+                 */
+/*
             AlarmManager.ELAPSED_REALTIME_WAKEUP,
             0,
-            /*
-            AlarmManager.RTC_WAKEUP,
-            calendar.timeInMillis,
             */
-            alarmIntent
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+
+                alarmIntent
         )
     }
 
     override fun onResume() {
         super.onResume()
+        Log.v("debug", "onResume")
 
-        Log.v("po", "onResume")
-
+        /*
         button.text = "set alarm"
         darkView.visibility = View.GONE
+        */
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        Log.v("debug", "onSaveInstanceState")
+
+        outState.putInt(Keys.HOUR, timePicker.hour)
+        outState.putInt(Keys.MINUTE, timePicker.minute)
+
+        outState.putBoolean(Keys.IS_ALARM_SET, button.text == CANCEL_ALARM)
+
+        if (button.text == CANCEL_ALARM) {
+            alarmMgr.cancel(alarmIntent)
+        }
     }
 }
