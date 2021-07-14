@@ -6,77 +6,70 @@ import android.media.AudioRecord
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Build
-import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
-import android.widget.TextView
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AppCompatActivity
+import androidx.concurrent.futures.CallbackToFutureAdapter
+import androidx.work.ListenableWorker
+import androidx.work.WorkerParameters
 import kotlin.math.abs
 
-class AlarmActivity : AppCompatActivity() {
-
-    private lateinit var timeText: TextView
+class AlarmWorker(appContext: Context, workerParams: WorkerParameters) :
+    ListenableWorker(appContext, workerParams) {
 
     private lateinit var mediaPlayer: MediaPlayer
     private lateinit var vibrator: Vibrator
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_alarm)
+    override fun startWork(): com.google.common.util.concurrent.ListenableFuture<Result> {
+        return CallbackToFutureAdapter.getFuture { completer ->
 
-        timeText = findViewById(R.id.textView)
+            mediaPlayer = MediaPlayer.create(applicationContext, R.raw.sound_file_1)
+            vibrator = applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
 
-        val hour = intent.getIntExtra("HOUR", 0)
-        val minute = intent.getIntExtra("MINUTE", 0)
-        timeText.text = String.format("%02d:%02d", hour, minute)
+            mediaPlayer.isLooping = true
 
-        mediaPlayer = MediaPlayer.create(applicationContext, R.raw.sound_file_1)
-        vibrator = applicationContext.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            mediaPlayer.start()
 
-        mediaPlayer.isLooping = true
-
-        mediaPlayer.start()
-
-        val vibrationEffect = VibrationEffect.createWaveform(
+            val vibrationEffect = VibrationEffect.createWaveform(
                 longArrayOf(300, 300),
                 intArrayOf(0, VibrationEffect.DEFAULT_AMPLITUDE),
                 0
-        )
-        vibrator.vibrate(vibrationEffect)
+            )
+            vibrator.vibrate(vibrationEffect)
 
-        audioRecording()
+            audioRecording(completer)
+        }
     }
 
-    private fun audioRecording() {
+    private fun audioRecording(completer: CallbackToFutureAdapter.Completer<Result>) {
 
         val samplingRate = 44100
         val frameRate = 10
         val section = samplingRate / frameRate * 30
         val bufSize = AudioRecord.getMinBufferSize(
-                samplingRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT
+            samplingRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
         )
 
         val audioDataArray = ShortArray(section)
 
         val audioRecord = AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                samplingRate,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufSize
+            MediaRecorder.AudioSource.MIC,
+            samplingRate,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+            bufSize
         )
 
         audioRecord.positionNotificationPeriod = section
 
         audioRecord.notificationMarkerPosition = 40000
 
-        audioRecord.setRecordPositionUpdateListener(object :
-                AudioRecord.OnRecordPositionUpdateListener {
+        val callback = object :
+            AudioRecord.OnRecordPositionUpdateListener {
             override fun onPeriodicNotification(recorder: AudioRecord) {
                 recorder.read(audioDataArray, 0, section)
                 Log.v("AudioRecord", "onPeriodicNotification size=${audioDataArray.size}")
@@ -90,7 +83,8 @@ class AlarmActivity : AppCompatActivity() {
                     vibrator.cancel()
                     audioRecord.stop()
 
-                    finish()
+                    //finish()
+                    completer.set(Result.success())
                 }
             }
 
@@ -98,12 +92,15 @@ class AlarmActivity : AppCompatActivity() {
                 recorder.read(audioDataArray, 0, section)
                 Log.v("AudioRecord", "onMarkerReached size=${audioDataArray.size}")
             }
-        })
+        }
+
+        audioRecord.setRecordPositionUpdateListener(callback)
 
         audioRecord.startRecording()
 
         audioRecord.read(audioDataArray, 0, section)
 
-    }
+        callback
 
+    }
 }
