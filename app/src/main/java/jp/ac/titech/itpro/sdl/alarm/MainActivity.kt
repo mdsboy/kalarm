@@ -7,6 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Message
+import android.provider.AlarmClock
 import android.util.Log
 import android.view.View
 import android.widget.Button
@@ -16,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
+    private val TAG = javaClass.simpleName
 
     private lateinit var timePicker: TimePicker
     private lateinit var button: Button
@@ -73,12 +77,16 @@ class MainActivity : AppCompatActivity() {
                 darkView.visibility = View.VISIBLE
             }
             CANCEL_ALARM -> {
-                alarmMgr.cancel(alarmIntent)
+                if (alarmIntent != null) {
+                    alarmMgr.cancel(alarmIntent)
+                } else {
+                    Log.d(TAG, "alarmIntent is null")
+                }
                 button.text = SET_ALARM
                 darkView.visibility = View.GONE
             }
             else -> {
-                Log.d("debug", "unexpected text")
+                Log.d(TAG, "unexpected text")
             }
         }
     }
@@ -91,7 +99,7 @@ class MainActivity : AppCompatActivity() {
             set(Calendar.MINUTE, timePicker.minute)
         }
 
-        Log.v("debug", String.format("set alarm %d:%d", timePicker.hour, timePicker.minute))
+        Log.v(TAG, String.format("set alarm %d:%d", timePicker.hour, timePicker.minute))
 
         val intent = Intent(this, AlarmReceiver::class.java)
         intent.putExtra("HOUR", timePicker.hour)
@@ -99,35 +107,37 @@ class MainActivity : AppCompatActivity() {
 
         alarmIntent = PendingIntent.getBroadcast(this, 0, intent, FLAG_CANCEL_CURRENT)
 
-        alarmMgr.setExactAndAllowWhileIdle(
-                /*
-                 * for debug
-                 */
-/*
-            AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            0,
-            */
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
+        val alarmClock = AlarmManager.AlarmClockInfo(calendar.timeInMillis, alarmIntent)
 
-                alarmIntent
-        )
+        alarmMgr.setAlarmClock(alarmClock, alarmIntent)
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onResume() {
         super.onResume()
-        Log.v("debug", "onResume")
+        Log.v(TAG, "onResume")
 
-        /*
-        button.text = "set alarm"
-        darkView.visibility = View.GONE
-        */
+        if (button.text == CANCEL_ALARM) {
+            val calendar = Calendar.getInstance().apply {
+                timeInMillis = System.currentTimeMillis()
+            }
+            val nowHour = calendar.get(Calendar.HOUR_OF_DAY)
+            val nowMinute = calendar.get(Calendar.MINUTE)
+
+            if (timePicker.minute <= nowMinute && timePicker.hour <= nowHour) {
+                Log.d(TAG, String.format("now:%2d%2d", nowHour, nowMinute))
+                Log.d(TAG, String.format("timePicker:%2d%2d", timePicker.hour, timePicker.minute))
+                Log.d(TAG, "alarm is not set")
+                button.text = SET_ALARM
+                darkView.visibility = View.GONE
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        Log.v("debug", "onSaveInstanceState")
+        Log.v(TAG, "onSaveInstanceState")
 
         outState.putInt(Keys.HOUR, timePicker.hour)
         outState.putInt(Keys.MINUTE, timePicker.minute)
@@ -135,7 +145,11 @@ class MainActivity : AppCompatActivity() {
         outState.putBoolean(Keys.IS_ALARM_SET, button.text == CANCEL_ALARM)
 
         if (button.text == CANCEL_ALARM) {
-            alarmMgr.cancel(alarmIntent)
+            if (alarmIntent != null) {
+                alarmMgr.cancel(alarmIntent)
+            } else {
+                Log.d(TAG, "alarmIntent is null")
+            }
         }
     }
 }
